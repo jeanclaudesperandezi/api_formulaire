@@ -1,18 +1,21 @@
-const express = require('express');
-const bodyParser = require('body-parser');
-const cors = require('cors');
-const authRoutes = require('./routes/authRoutes');
+import express from 'express';
+import bodyParser from 'body-parser';
+import dotenv from 'dotenv';
+import authRoutes from './routes/authRoutes.js';
+
+dotenv.config();
+
 const app = express();
 
-
-app.use(cors());
+// Middleware
 app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
+// Routes
+app.use('/api/auth', authRoutes);
 
-app.use(authRoutes);
-
-
-const PORT = 3000;
+// Démarrage du serveur
+const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
-    console.log(`Serveur démarré sur le port http://localhost:${PORT}`);
+  console.log(`Serveur en cours d'exécution sur le port ${PORT}`);
 });

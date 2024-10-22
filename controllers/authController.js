@@ -1,38 +1,31 @@
-const User = require('../models/userModels');
-const jwt = require('jsonwebtoken');
+import User from '../models/userModels.js';
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
+import dotenv from 'dotenv';
 
-// Clé secrète pour le JWT
-const JWT_SECRET = 'votre_secret_jwt'; // Changez ceci en une valeur sécurisée
+dotenv.config();
 
-// Inscription
-exports.registerUser = (req, res) => {
-    const { username, password } = req.body;
+export const register = (req, res) => {
+  const { username, password } = req.body;
 
-    User.addUser({ username, password }, (err, result) => {
-        if (err) {
-            return res.status(500).json({ message: 'Erreur lors de l\'inscription', error: err });
-        }
-        res.status(201).json({ message: 'Utilisateur créé avec succès' });
-    });
+  User.create(username, password, (err, result) => {
+    if (err) return res.status(500).json({ message: 'Erreur lors de l\'inscription', error: err });
+    return res.status(201).json({ message: 'Utilisateur créé avec succès' });
+  });
 };
 
-// Connexion
-exports.loginUser = (req, res) => {
-    const { username, password } = req.body;
+export const login = (req, res) => {
+  const { username, password } = req.body;
 
-    User.verifyUser(username, password, (err, user) => {
-        if (err) {
-            return res.status(500).json({ message: 'Erreur lors de la connexion', error: err });
-        }
-        if (!user) {
-            return res.status(401).json({ message: 'Identifiants invalides' });
-        }
+  User.findByUsername(username, (err, user) => {
+    if (err) return res.status(500).json({ message: 'Erreur serveur', error: err });
+    if (!user) return res.status(404).json({ message: 'Utilisateur non trouvé' });
 
-        // Générer un token JWT
-        const token = jwt.sign({ id: user.id_user, username: user.username }, JWT_SECRET, {
-            expiresIn: '1h', // Durée de validité du token
-        });
+    const passwordIsValid = bcrypt.compareSync(password, user.password);
+    if (!passwordIsValid) return res.status(401).json({ message: 'Mot de passe incorrect' });
 
-        res.json({ message: 'Connexion réussie', token });
-    });
+    const token = jwt.sign({ id: user.id, username: user.username }, process.env.JWT_SECRET, { expiresIn: '24h' });
+
+    return res.status(200).json({ message: 'Connexion réussie', token });
+  });
 };
